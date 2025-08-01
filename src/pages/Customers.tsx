@@ -3,25 +3,47 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { customers, type Customer } from "@/lib/mockData";
+import { useCustomers, type Customer } from "@/hooks/useCustomers";
 import { Plus, Search, Mail, Phone } from "lucide-react";
 
 export function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: customers, isLoading, error } = useCustomers();
   
-  const filteredCustomers = customers.filter(customer =>
+  const filteredCustomers = customers?.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  ) || [];
 
-  const getRiskColor = (risk: Customer['riskLevel']) => {
-    switch (risk) {
-      case 'Low': return 'text-success border-success';
-      case 'Medium': return 'text-warning border-warning';
-      case 'High': return 'text-destructive border-destructive';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'text-success border-success';
+      case 'inactive': return 'text-destructive border-destructive';
       default: return 'text-secondary border-secondary';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Customers</h1>
+          <p className="text-muted-foreground">Loading customers...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Customers</h1>
+          <p className="text-destructive">Error loading customers: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -56,31 +78,37 @@ export function Customers() {
                 <CardTitle className="text-lg">{customer.name}</CardTitle>
                 <Badge 
                   variant="outline"
-                  className={getRiskColor(customer.riskLevel)}
+                  className={getStatusColor(customer.status)}
                 >
-                  {customer.riskLevel} Risk
+                  {customer.status}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span>{customer.email}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>{customer.phone}</span>
-              </div>
-              <div className="text-sm">
-                <p className="text-muted-foreground">Payment Terms:</p>
-                <p className="font-medium">{customer.paymentTerms} days</p>
-              </div>
-              <div className="text-sm">
-                <p className="text-muted-foreground">Status:</p>
-                <Badge variant={customer.status === 'Active' ? 'default' : 'secondary'}>
-                  {customer.status}
-                </Badge>
-              </div>
+              {customer.email && (
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Mail className="h-4 w-4" />
+                  <span>{customer.email}</span>
+                </div>
+              )}
+              {customer.phone && (
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Phone className="h-4 w-4" />
+                  <span>{customer.phone}</span>
+                </div>
+              )}
+              {customer.industry && (
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Industry:</p>
+                  <p className="font-medium">{customer.industry}</p>
+                </div>
+              )}
+              {customer.contact_person && (
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Contact Person:</p>
+                  <p className="font-medium">{customer.contact_person}</p>
+                </div>
+              )}
               <div className="pt-2">
                 <Button variant="outline" size="sm" className="w-full">
                   View Details

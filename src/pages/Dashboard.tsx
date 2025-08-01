@@ -1,5 +1,6 @@
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { 
   FileText, 
   ShoppingCart, 
@@ -12,6 +13,19 @@ import {
 } from "lucide-react";
 
 export function Dashboard() {
+  const { data: stats, isLoading } = useDashboardStats();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -23,25 +37,25 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Active Job Cards"
-          value={12}
+          value={stats?.activeJobCards || 0}
           icon={Factory}
           trend={{ value: 8, isPositive: true }}
         />
         <MetricCard
-          title="Pending Quotations"
-          value={5}
+          title="In Progress Jobs"
+          value={stats?.inProgressJobCards || 0}
           icon={FileText}
           trend={{ value: -12, isPositive: false }}
         />
         <MetricCard
-          title="Monthly Revenue"
-          value="₹8.5L"
-          icon={TrendingUp}
+          title="Completed Jobs"
+          value={stats?.completedJobCards || 0}
+          icon={CheckCircle}
           trend={{ value: 15, isPositive: true }}
         />
         <MetricCard
           title="Active Customers"
-          value={42}
+          value={stats?.activeCustomers || 0}
           icon={Users}
           trend={{ value: 3, isPositive: true }}
         />
@@ -51,21 +65,21 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MetricCard
           title="QC Pending"
-          value={3}
+          value={stats?.pendingInspections || 0}
           icon={AlertTriangle}
           className="border-warning"
         />
         <MetricCard
-          title="Ready to Dispatch"
-          value={7}
-          icon={CheckCircle}
-          className="border-success"
-        />
-        <MetricCard
-          title="Overdue Payments"
-          value={2}
+          title="Urgent Jobs"
+          value={stats?.urgentJobCards || 0}
           icon={Clock}
           className="border-destructive"
+        />
+        <MetricCard
+          title="Total Job Cards"
+          value={(stats?.activeJobCards || 0) + (stats?.completedJobCards || 0)}
+          icon={TrendingUp}
+          className="border-success"
         />
       </div>
 

@@ -3,33 +3,71 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { jobCards, wipEntries, type JobCard } from "@/lib/mockData";
+import { useJobCards, type JobCard } from "@/hooks/useJobCards";
 import { Plus, Search, Eye, Play, Pause } from "lucide-react";
 
 export function JobCards() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: jobCards, isLoading, error } = useJobCards();
   
-  const filteredJobCards = jobCards.filter(jobCard =>
-    jobCard.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    jobCard.productName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredJobCards = jobCards?.filter(jobCard =>
+    jobCard.job_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    jobCard.title.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
-  const getStatusColor = (status: JobCard['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Pending RM': return 'text-warning border-warning';
-      case 'In Progress': return 'text-primary border-primary';
-      case 'QC': return 'text-accent-foreground border-accent';
-      case 'Completed': return 'text-success border-success';
-      case 'Rework': return 'text-destructive border-destructive';
+      case 'pending': return 'text-warning border-warning';
+      case 'in_progress': return 'text-primary border-primary';
+      case 'review': return 'text-accent-foreground border-accent';
+      case 'completed': return 'text-success border-success';
+      case 'cancelled': return 'text-destructive border-destructive';
       default: return 'text-secondary border-secondary';
     }
   };
 
-  const getStageProgress = (currentStage: string) => {
-    const stages = ['Cutting', 'Forging', 'HT', 'PF', 'QC', 'Dispatch'];
-    const currentIndex = stages.indexOf(currentStage);
-    return ((currentIndex + 1) / stages.length) * 100;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'text-destructive border-destructive';
+      case 'high': return 'text-warning border-warning';
+      case 'medium': return 'text-primary border-primary';
+      case 'low': return 'text-muted-foreground border-muted';
+      default: return 'text-secondary border-secondary';
+    }
   };
+
+  const getStatusProgress = (status: string) => {
+    switch (status) {
+      case 'pending': return 10;
+      case 'in_progress': return 50;
+      case 'review': return 80;
+      case 'completed': return 100;
+      case 'cancelled': return 0;
+      default: return 0;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Job Cards</h1>
+          <p className="text-muted-foreground">Loading job cards...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Job Cards</h1>
+          <p className="text-destructive">Error loading job cards: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -62,52 +100,63 @@ export function JobCards() {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{jobCard.jobNumber}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{jobCard.productName}</p>
+                  <CardTitle className="text-lg">{jobCard.job_number}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{jobCard.title}</p>
+                  {jobCard.customers && (
+                    <p className="text-xs text-muted-foreground">Customer: {jobCard.customers.name}</p>
+                  )}
                 </div>
-                <Badge 
-                  variant="outline"
-                  className={getStatusColor(jobCard.status)}
-                >
-                  {jobCard.status}
-                </Badge>
+                <div className="flex flex-col gap-1">
+                  <Badge 
+                    variant="outline"
+                    className={getStatusColor(jobCard.status)}
+                  >
+                    {jobCard.status}
+                  </Badge>
+                  <Badge 
+                    variant="outline"
+                    className={`${getPriorityColor(jobCard.priority)} text-xs`}
+                  >
+                    {jobCard.priority}
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Quantity</p>
-                  <p className="font-medium">{jobCard.quantity} units</p>
+                  <p className="text-muted-foreground">Estimated Hours</p>
+                  <p className="font-medium">{jobCard.estimated_hours || 'Not set'}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Current Stage</p>
-                  <p className="font-medium">{jobCard.currentStage}</p>
+                  <p className="text-muted-foreground">Actual Hours</p>
+                  <p className="font-medium">{jobCard.actual_hours || 'Not set'}</p>
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm text-muted-foreground">Production Progress</p>
-                  <p className="text-sm font-medium">{Math.round(getStageProgress(jobCard.currentStage))}%</p>
+                  <p className="text-sm text-muted-foreground">Progress</p>
+                  <p className="text-sm font-medium">{getStatusProgress(jobCard.status)}%</p>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div 
                     className="bg-gradient-primary h-2 rounded-full transition-all"
-                    style={{ width: `${getStageProgress(jobCard.currentStage)}%` }}
+                    style={{ width: `${getStatusProgress(jobCard.status)}%` }}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">RM Batch</p>
-                  <p className="font-medium">{jobCard.rmBatchId}</p>
+                  <p className="text-muted-foreground">Assigned To</p>
+                  <p className="font-medium">{jobCard.assigned_to || 'Unassigned'}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">RM Status</p>
-                  <Badge variant={jobCard.rmApproved ? 'default' : 'secondary'}>
-                    {jobCard.rmApproved ? 'Approved' : 'Pending'}
-                  </Badge>
+                  <p className="text-muted-foreground">Due Date</p>
+                  <p className="font-medium">
+                    {jobCard.due_date ? new Date(jobCard.due_date).toLocaleDateString() : 'Not set'}
+                  </p>
                 </div>
               </div>
 
@@ -120,9 +169,9 @@ export function JobCards() {
                   variant="outline" 
                   size="sm"
                   className="flex-1"
-                  disabled={jobCard.status === 'Completed'}
+                  disabled={jobCard.status === 'completed'}
                 >
-                  {jobCard.status === 'In Progress' ? (
+                  {jobCard.status === 'in_progress' ? (
                     <>
                       <Pause className="h-4 w-4 mr-2" />
                       Pause
@@ -130,7 +179,7 @@ export function JobCards() {
                   ) : (
                     <>
                       <Play className="h-4 w-4 mr-2" />
-                      Resume
+                      Start
                     </>
                   )}
                 </Button>
@@ -140,25 +189,37 @@ export function JobCards() {
         ))}
       </div>
 
-      {/* WIP Summary */}
+      {/* Active Jobs Summary */}
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle>Active Work in Progress</CardTitle>
+          <CardTitle>Jobs Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {wipEntries.filter(wip => wip.status === 'In Progress').map((wip) => (
-              <div key={wip.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div>
-                  <p className="font-medium">{wip.stage}</p>
-                  <p className="text-sm text-muted-foreground">Operator: {wip.operatorName}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Job Card</p>
-                  <p className="font-medium">{wip.jobCardId}</p>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <p className="text-2xl font-bold text-primary">
+                {filteredJobCards.filter(jc => jc.status === 'pending').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Pending</p>
+            </div>
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <p className="text-2xl font-bold text-warning">
+                {filteredJobCards.filter(jc => jc.status === 'in_progress').length}
+              </p>
+              <p className="text-sm text-muted-foreground">In Progress</p>
+            </div>
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <p className="text-2xl font-bold text-accent-foreground">
+                {filteredJobCards.filter(jc => jc.status === 'review').length}
+              </p>
+              <p className="text-sm text-muted-foreground">In Review</p>
+            </div>
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <p className="text-2xl font-bold text-success">
+                {filteredJobCards.filter(jc => jc.status === 'completed').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Completed</p>
+            </div>
           </div>
         </CardContent>
       </Card>
