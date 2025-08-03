@@ -82,30 +82,28 @@ export function AppSidebar() {
         </div>
 
         {navigation.map((section) => (
-          <SidebarGroup key={section.title}>
-            <SidebarGroupLabel className={!open ? "hidden" : "block"}>
+          <div key={section.title} className="mb-4">
+            <div className={`px-3 mb-2 text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider ${!open ? "hidden" : "block"}`}>
               {section.title}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {section.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        end 
-                        className={getNavCls}
-                        title={item.title}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {open && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+            </div>
+            <SidebarMenu>
+              {section.items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url} 
+                      end 
+                      className={getNavCls}
+                      title={item.title}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {open && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </div>
         ))}
       </SidebarContent>
     </Sidebar>
