@@ -60,10 +60,9 @@ const navigation = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { open } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  const collapsed = state === "collapsed";
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -71,19 +70,19 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={collapsed ? "w-14" : "w-64"}
+      className={!open ? "w-14" : "w-64"}
       collapsible="icon"
     >
       <SidebarContent>
         <div className="p-4">
-          <h2 className={`font-bold text-lg ${collapsed ? "hidden" : "block"}`}>
+          <h2 className={`font-bold text-lg ${!open ? "hidden" : "block"}`}>
             Manufacturing ERP
           </h2>
         </div>
 
         {navigation.map((section) => (
           <SidebarGroup key={section.title}>
-            <SidebarGroupLabel className={collapsed ? "hidden" : "block"}>
+            <SidebarGroupLabel className={!open ? "hidden" : "block"}>
               {section.title}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -98,7 +97,7 @@ export function AppSidebar() {
                         title={item.title}
                       >
                         <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        {open && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
