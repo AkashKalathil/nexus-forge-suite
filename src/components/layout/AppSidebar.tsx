@@ -72,7 +72,7 @@ export function AppSidebar() {
   return (
     <Sidebar
       className={!open ? "w-14" : "w-64"}
-      collapsible="icon"
+      collapsible={open ? "none" : "icon"}
     >
       <SidebarContent>
         <div className="p-4">
