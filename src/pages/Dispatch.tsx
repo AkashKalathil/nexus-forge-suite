@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useShipments } from "@/hooks/useShipments";
 
 // Mock data for dispatch
 const mockDispatch = [
@@ -103,8 +104,10 @@ export default function Dispatch() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  
+  const { data: shipments = [], isLoading } = useShipments();
 
-  const filteredShipments = mockDispatch.filter((shipment) => {
+  const filteredShipments = shipments.filter((shipment) => {
     const matchesSearch = 
       shipment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       shipment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||

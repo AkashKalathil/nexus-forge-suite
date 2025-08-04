@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTools } from "@/hooks/useTools";
 
 // Mock data for tools
 const mockTools = [
@@ -103,8 +104,10 @@ export default function Tools() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  
+  const { data: tools = [], isLoading } = useTools();
 
-  const filteredTools = mockTools.filter((tool) => {
+  const filteredTools = tools.filter((tool) => {
     const matchesSearch = 
       tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.type.toLowerCase().includes(searchTerm.toLowerCase()) ||

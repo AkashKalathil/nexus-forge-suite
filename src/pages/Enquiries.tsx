@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEnquiries } from "@/hooks/useEnquiries";
 
 // Mock data for enquiries
 const mockEnquiries = [
@@ -67,12 +68,14 @@ export default function Enquiries() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  
+  const { data: enquiries = [], isLoading } = useEnquiries();
 
-  const filteredEnquiries = mockEnquiries.filter((enquiry) => {
+  const filteredEnquiries = enquiries.filter((enquiry) => {
     const matchesSearch = 
-      enquiry.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enquiry.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enquiry.id.toLowerCase().includes(searchTerm.toLowerCase());
+      enquiry.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enquiry.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enquiry.enquiry_id?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || enquiry.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || enquiry.priority === priorityFilter;
@@ -143,7 +146,7 @@ export default function Enquiries() {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg">{enquiry.id}</CardTitle>
+                  <CardTitle className="text-lg">{enquiry.enquiry_id}</CardTitle>
                   <CardDescription className="text-base font-medium">
                     {enquiry.subject}
                   </CardDescription>
@@ -153,7 +156,7 @@ export default function Enquiries() {
                     {enquiry.priority}
                   </Badge>
                   <Badge className={statusColors[enquiry.status as keyof typeof statusColors]}>
-                    {enquiry.status.replace('_', ' ')}
+                    {enquiry.status?.replace('_', ' ')}
                   </Badge>
                 </div>
               </div>
@@ -163,34 +166,30 @@ export default function Enquiries() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{enquiry.customerName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{enquiry.contactPerson}</span>
+                    <span className="font-medium">{enquiry.customer_name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{enquiry.email}</span>
+                    <span className="text-sm text-muted-foreground">{enquiry.customer_email || 'Not provided'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{enquiry.phone}</span>
+                    <span className="text-sm text-muted-foreground">{enquiry.customer_phone || 'Not provided'}</span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {enquiry.description}
+                    {enquiry.description || 'No description provided'}
                   </p>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Created: {new Date(enquiry.createdAt).toLocaleDateString()}
+                      Created: {new Date(enquiry.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="text-sm">
                     <span className="text-muted-foreground">Estimated Value: </span>
-                    <span className="font-medium">${enquiry.estimatedValue.toLocaleString()}</span>
+                    <span className="font-medium">${enquiry.estimated_value?.toLocaleString() || 'N/A'}</span>
                   </div>
                 </div>
               </div>

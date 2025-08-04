@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuotations } from "@/hooks/useQuotations";
 
 // Mock data for quotations
 const mockQuotations = [
@@ -66,12 +67,14 @@ const statusColors = {
 export default function Quotations() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  
+  const { data: quotations = [], isLoading } = useQuotations();
 
-  const filteredQuotations = mockQuotations.filter((quotation) => {
+  const filteredQuotations = quotations.filter((quotation) => {
     const matchesSearch = 
-      quotation.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quotation.projectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quotation.id.toLowerCase().includes(searchTerm.toLowerCase());
+      quotation.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      quotation.project_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      quotation.quotation_id?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || quotation.status === statusFilter;
     
@@ -130,9 +133,9 @@ export default function Quotations() {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg">{quotation.id}</CardTitle>
+                  <CardTitle className="text-lg">{quotation.quotation_id}</CardTitle>
                   <CardDescription className="text-base font-medium">
-                    {quotation.projectTitle}
+                    {quotation.project_title}
                   </CardDescription>
                 </div>
                 <Badge className={statusColors[quotation.status as keyof typeof statusColors]}>
@@ -145,33 +148,33 @@ export default function Quotations() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{quotation.customerName}</span>
+                    <span className="font-medium">{quotation.customer?.name || 'N/A'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Based on {quotation.enquiryId}
+                      Based on {quotation.enquiry?.enquiry_id || 'N/A'}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {quotation.description}
+                    {quotation.description || 'No description provided'}
                   </p>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg font-bold">${quotation.totalAmount.toLocaleString()}</span>
+                    <span className="text-lg font-bold">${quotation.total_amount?.toLocaleString() || '0'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Valid until: {new Date(quotation.validUntil).toLocaleDateString()}
+                      Valid until: {quotation.valid_until ? new Date(quotation.valid_until).toLocaleDateString() : 'Not set'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Created: {new Date(quotation.createdAt).toLocaleDateString()}
+                      Created: {new Date(quotation.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -181,14 +184,17 @@ export default function Quotations() {
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2">Line Items:</h4>
                 <div className="space-y-1">
-                  {quotation.lineItems.map((item, index) => (
+                  {quotation.quotation_items?.map((item, index) => (
                     <div key={index} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
                         {item.description} (x{item.quantity})
                       </span>
-                      <span className="font-medium">${item.total.toLocaleString()}</span>
+                      <span className="font-medium">${item.total_price?.toLocaleString()}</span>
                     </div>
                   ))}
+                  {!quotation.quotation_items?.length && (
+                    <span className="text-sm text-muted-foreground">No items added</span>
+                  )}
                 </div>
               </div>
 
