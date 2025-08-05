@@ -123,9 +123,9 @@ export default function Invoices() {
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch = 
-      invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.jobCardId.toLowerCase().includes(searchTerm.toLowerCase());
+      (invoice.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice.job_card_id || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
     
@@ -134,11 +134,11 @@ export default function Invoices() {
 
   const totalOutstanding = filteredInvoices
     .filter(inv => inv.status === 'sent' || inv.status === 'overdue')
-    .reduce((sum, inv) => sum + inv.totalAmount, 0);
+    .reduce((sum, inv) => sum + inv.total_amount, 0);
 
   const totalPaid = filteredInvoices
     .filter(inv => inv.status === 'paid')
-    .reduce((sum, inv) => sum + inv.totalAmount, 0);
+    .reduce((sum, inv) => sum + inv.total_amount, 0);
 
   return (
     <div className="space-y-6">
@@ -229,13 +229,13 @@ export default function Invoices() {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg">{invoice.id}</CardTitle>
+                  <CardTitle className="text-lg">{invoice.invoice_number}</CardTitle>
                   <CardDescription className="text-base font-medium">
-                    {invoice.customerName}
+                    {invoice.customer?.name || 'Unknown Customer'}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2 items-center">
-                  <span className="text-2xl font-bold">${invoice.totalAmount.toLocaleString()}</span>
+                  <span className="text-2xl font-bold">${invoice.total_amount.toLocaleString()}</span>
                   <Badge className={statusColors[invoice.status as keyof typeof statusColors]}>
                     {invoice.status}
                   </Badge>
@@ -247,19 +247,19 @@ export default function Invoices() {
                 <div className="space-y-3">
                   <div className="text-sm">
                     <span className="text-muted-foreground">Job Card: </span>
-                    <span className="font-medium">{invoice.jobCardId}</span>
+                    <span className="font-medium">{invoice.job_card_id || 'N/A'}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-muted-foreground">Quotation: </span>
-                    <span className="font-medium">{invoice.quotationId}</span>
+                    <span className="font-medium">{invoice.quotation_id || 'N/A'}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-muted-foreground">Contact: </span>
-                    <span className="font-medium">{invoice.customerDetails.contact}</span>
+                    <span className="font-medium">{invoice.customer?.contact_person || 'N/A'}</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-muted-foreground">Payment Terms: </span>
-                    <span className="font-medium">{invoice.paymentTerms}</span>
+                    <span className="font-medium">{invoice.payment_terms || 'N/A'}</span>
                   </div>
                 </div>
                 
@@ -268,22 +268,22 @@ export default function Invoices() {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Issued: </span>
                     <span className="font-medium">
-                      {new Date(invoice.issueDate).toLocaleDateString()}
+                      {new Date(invoice.issue_date).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Due: </span>
                     <span className={`font-medium ${invoice.status === 'overdue' ? 'text-red-600' : ''}`}>
-                      {new Date(invoice.dueDate).toLocaleDateString()}
+                      {new Date(invoice.due_date).toLocaleDateString()}
                     </span>
                   </div>
-                  {invoice.paidDate && (
+                  {invoice.paid_amount > 0 && invoice.status === 'paid' && (
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-green-600" />
-                      <span className="text-muted-foreground">Paid: </span>
+                      <span className="text-muted-foreground">Paid Amount: </span>
                       <span className="font-medium text-green-600">
-                        {new Date(invoice.paidDate).toLocaleDateString()}
+                        ${invoice.paid_amount.toLocaleString()}
                       </span>
                     </div>
                   )}
@@ -291,11 +291,11 @@ export default function Invoices() {
                   <div className="pt-2 space-y-1">
                     <div className="text-sm">
                       <span className="text-muted-foreground">Subtotal: </span>
-                      <span className="font-medium">${invoice.amount.toLocaleString()}</span>
+                      <span className="font-medium">${invoice.subtotal.toLocaleString()}</span>
                     </div>
                     <div className="text-sm">
                       <span className="text-muted-foreground">Tax: </span>
-                      <span className="font-medium">${invoice.taxAmount.toLocaleString()}</span>
+                      <span className="font-medium">${invoice.tax_amount.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -305,12 +305,12 @@ export default function Invoices() {
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2">Line Items:</h4>
                 <div className="space-y-1">
-                  {invoice.lineItems.map((item, index) => (
+                  {invoice.invoice_items?.map((item, index) => (
                     <div key={index} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {item.description}
+                        {item.description} (x{item.quantity})
                       </span>
-                      <span className="font-medium">${item.total.toLocaleString()}</span>
+                      <span className="font-medium">${item.total_price.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>

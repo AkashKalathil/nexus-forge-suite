@@ -111,8 +111,8 @@ export default function Tools() {
     const matchesSearch = 
       tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.model.toLowerCase().includes(searchTerm.toLowerCase());
+      tool.tool_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tool.model || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || tool.status === statusFilter;
     const matchesType = typeFilter === "all" || tool.type === typeFilter;
@@ -212,19 +212,19 @@ export default function Tools() {
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">ID: </span>
-                      <span className="font-medium">{tool.id}</span>
+                      <span className="font-medium">{tool.tool_id}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Serial: </span>
-                      <span className="font-medium">{tool.serialNumber}</span>
+                      <span className="font-medium">{tool.serial_number || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Location: </span>
-                      <span className="font-medium">{tool.location}</span>
+                      <span className="font-medium">{tool.location || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Assigned to: </span>
-                      <span className="font-medium">{tool.assignedTo}</span>
+                      <span className="text-muted-foreground">Manufacturer: </span>
+                      <span className="font-medium">{tool.manufacturer || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -236,23 +236,23 @@ export default function Tools() {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Last: </span>
                       <span className="font-medium">
-                        {new Date(tool.lastMaintenance).toLocaleDateString()}
+                        {tool.last_maintenance ? new Date(tool.last_maintenance).toLocaleDateString() : 'N/A'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Next: </span>
                       <span className="font-medium">
-                        {new Date(tool.nextMaintenance).toLocaleDateString()}
+                        {tool.next_maintenance ? new Date(tool.next_maintenance).toLocaleDateString() : 'N/A'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Maintenance Hours: </span>
-                      <span className="font-medium">{tool.maintenanceHours}h</span>
+                      <span className="text-muted-foreground">Maintenance Interval: </span>
+                      <span className="font-medium">{tool.maintenance_interval_days || 365} days</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Total Hours: </span>
-                      <span className="font-medium">{tool.totalHours}h</span>
+                      <span className="text-muted-foreground">Purchase Cost: </span>
+                      <span className="font-medium">{tool.purchase_cost ? `$${tool.purchase_cost}` : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -263,15 +263,14 @@ export default function Tools() {
                     <div>
                       <span className="text-muted-foreground">Purchase Date: </span>
                       <span className="font-medium">
-                        {new Date(tool.purchaseDate).toLocaleDateString()}
+                        {tool.purchase_date ? new Date(tool.purchase_date).toLocaleDateString() : 'N/A'}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Warranty: </span>
-                      <span className={`font-medium ${tool.warranty.includes('Active') ? 'text-green-600' : 'text-red-600'}`}>
-                        {tool.warranty}
-                      </span>
-                    </div>
+                    {tool.notes && (
+                      <div className="bg-blue-50 dark:bg-blue-950 p-2 rounded-md">
+                        <span className="text-sm text-blue-800 dark:text-blue-200">Notes: {tool.notes}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

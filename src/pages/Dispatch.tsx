@@ -109,10 +109,10 @@ export default function Dispatch() {
 
   const filteredShipments = shipments.filter((shipment) => {
     const matchesSearch = 
-      shipment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipment.jobCardId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (shipment.trackingNumber && shipment.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()));
+      (shipment.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shipment.shipment_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (shipment.job_card_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (shipment.tracking_number && shipment.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === "all" || shipment.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || shipment.priority === priorityFilter;
@@ -186,10 +186,10 @@ export default function Dispatch() {
                 <div className="space-y-1">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Truck className="h-5 w-5" />
-                    {shipment.id}
+                    {shipment.shipment_id}
                   </CardTitle>
                   <CardDescription className="text-base font-medium">
-                    Job Card: {shipment.jobCardId} - {shipment.customerName}
+                    Job Card: {shipment.job_card_id} - {shipment.customer?.name || 'Unknown Customer'}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -210,10 +210,10 @@ export default function Dispatch() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-start gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <span className="text-muted-foreground">{shipment.customerAddress}</span>
+                        <span className="text-muted-foreground">{shipment.shipping_address}</span>
                       </div>
                       <div className="text-muted-foreground">
-                        Contact: {shipment.contact.name} - {shipment.contact.phone}
+                        Contact: {shipment.customer?.contact_person || 'N/A'} - {shipment.customer?.phone || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -225,19 +225,19 @@ export default function Dispatch() {
                         <span className="text-muted-foreground">Carrier: </span>
                         <span className="font-medium">{shipment.carrier}</span>
                       </div>
-                      {shipment.trackingNumber && (
+                      {shipment.tracking_number && (
                         <div>
                           <span className="text-muted-foreground">Tracking: </span>
-                          <span className="font-medium">{shipment.trackingNumber}</span>
+                          <span className="font-medium">{shipment.tracking_number}</span>
                         </div>
                       )}
                       <div>
-                        <span className="text-muted-foreground">Weight: </span>
-                        <span className="font-medium">{shipment.totalWeight}</span>
+                        <span className="text-muted-foreground">Shipping Cost: </span>
+                        <span className="font-medium">{shipment.shipping_cost ? `$${shipment.shipping_cost}` : 'N/A'}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Dimensions: </span>
-                        <span className="font-medium">{shipment.dimensions}</span>
+                        <span className="text-muted-foreground">Method: </span>
+                        <span className="font-medium">{shipment.shipping_method || 'Standard'}</span>
                       </div>
                     </div>
                   </div>
@@ -249,24 +249,24 @@ export default function Dispatch() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Scheduled: </span>
+                        <span className="text-muted-foreground">Created: </span>
                         <span className="font-medium">
-                          {new Date(shipment.scheduledDate).toLocaleDateString()}
+                          {new Date(shipment.created_at).toLocaleDateString()}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Est. Delivery: </span>
                         <span className="font-medium">
-                          {new Date(shipment.estimatedDelivery).toLocaleDateString()}
+                          {shipment.estimated_delivery ? new Date(shipment.estimated_delivery).toLocaleDateString() : 'TBD'}
                         </span>
                       </div>
-                      {shipment.actualDelivery && (
+                      {shipment.actual_delivery && (
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-green-600" />
                           <span className="text-muted-foreground">Delivered: </span>
                           <span className="font-medium text-green-600">
-                            {new Date(shipment.actualDelivery).toLocaleDateString()}
+                            {new Date(shipment.actual_delivery).toLocaleDateString()}
                           </span>
                         </div>
                       )}
@@ -276,21 +276,21 @@ export default function Dispatch() {
                   <div>
                     <h4 className="text-sm font-medium mb-2">Items</h4>
                     <div className="space-y-1">
-                      {shipment.items.map((item, index) => (
+                      {shipment.shipment_items?.map((item, index) => (
                         <div key={index} className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
-                            {item.description} (x{item.quantity})
+                            {item.item_name} (x{item.quantity})
                           </span>
-                          <span className="font-medium">{item.weight}</span>
+                          <span className="font-medium">{item.description || 'N/A'}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                   
-                  {shipment.specialInstructions && (
+                  {shipment.notes && (
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Special Instructions</h4>
-                      <p className="text-sm text-muted-foreground">{shipment.specialInstructions}</p>
+                      <h4 className="text-sm font-medium mb-2">Notes</h4>
+                      <p className="text-sm text-muted-foreground">{shipment.notes}</p>
                     </div>
                   )}
                 </div>
