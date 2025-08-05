@@ -67,3 +67,26 @@ export const useUpdateTool = () => {
     },
   });
 };
+
+export const useDeleteTool = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("tools")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tools"] });
+      toast.success("Tool deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete tool");
+      console.error(error);
+    },
+  });
+};

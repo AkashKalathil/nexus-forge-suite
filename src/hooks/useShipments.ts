@@ -72,3 +72,26 @@ export const useUpdateShipment = () => {
     },
   });
 };
+
+export const useDeleteShipment = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("shipments")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shipments"] });
+      toast.success("Shipment deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete shipment");
+      console.error(error);
+    },
+  });
+};

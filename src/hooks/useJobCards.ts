@@ -60,3 +60,42 @@ export function useCreateJobCard() {
     },
   });
 }
+
+export function useUpdateJobCard() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Omit<JobCard, 'id' | 'created_at' | 'updated_at' | 'customers'>> }) => {
+      const { data, error } = await supabase
+        .from('job_cards')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job_cards'] });
+    },
+  });
+}
+
+export function useDeleteJobCard() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('job_cards')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job_cards'] });
+    },
+  });
+}

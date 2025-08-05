@@ -44,3 +44,52 @@ export const useCreatePurchaseOrder = () => {
     },
   });
 };
+
+export const useUpdatePurchaseOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { data, error } = await supabase
+        .from("purchase_orders")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      toast.success("Purchase order updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update purchase order");
+      console.error(error);
+    },
+  });
+};
+
+export const useDeletePurchaseOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("purchase_orders")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
+      toast.success("Purchase order deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete purchase order");
+      console.error(error);
+    },
+  });
+};

@@ -73,3 +73,26 @@ export const useUpdateInvoice = () => {
     },
   });
 };
+
+export const useDeleteInvoice = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("invoices")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Invoice deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete invoice");
+      console.error(error);
+    },
+  });
+};
