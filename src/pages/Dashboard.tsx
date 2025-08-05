@@ -1,6 +1,7 @@
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useProductionCapacity } from "@/hooks/useProductionStages";
 import { 
   FileText, 
   ShoppingCart, 
@@ -14,6 +15,7 @@ import {
 
 export function Dashboard() {
   const { data: stats, isLoading } = useDashboardStats();
+  const { data: productionCapacity, isLoading: capacityLoading } = useProductionCapacity();
 
   if (isLoading) {
     return (
@@ -91,22 +93,23 @@ export function Dashboard() {
         <div className="bg-gradient-primary text-primary-foreground p-6 rounded-lg shadow-elevated">
           <h3 className="text-lg font-semibold mb-4">Production Status</h3>
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span>Cutting Stage</span>
-              <span className="font-semibold">85% Capacity</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Forging Stage</span>
-              <span className="font-semibold">72% Capacity</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Heat Treatment</span>
-              <span className="font-semibold">45% Capacity</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Precision Finishing</span>
-              <span className="font-semibold">63% Capacity</span>
-            </div>
+            {capacityLoading ? (
+              <p className="text-primary-foreground/70">Loading production data...</p>
+            ) : productionCapacity && productionCapacity.length > 0 ? (
+              productionCapacity.map((stage, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span>{stage.name}</span>
+                  <span className="font-semibold">{stage.capacity}% Capacity</span>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span>No production stages configured</span>
+                  <span className="font-semibold">0% Capacity</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
