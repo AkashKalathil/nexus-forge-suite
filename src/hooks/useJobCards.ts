@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface JobCard {
   id: string;
@@ -57,6 +58,11 @@ export function useCreateJobCard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['job_cards'] });
+      toast.success('Job card created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create job card');
+      console.error(error);
     },
   });
 }
@@ -78,6 +84,11 @@ export function useUpdateJobCard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['job_cards'] });
+      toast.success('Job card updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update job card');
+      console.error(error);
     },
   });
 }
@@ -96,6 +107,11 @@ export function useDeleteJobCard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['job_cards'] });
+      toast.success('Job card deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete job card');
+      console.error(error);
     },
   });
 }

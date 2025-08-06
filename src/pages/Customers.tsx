@@ -5,9 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useCustomers, type Customer } from "@/hooks/useCustomers";
 import { Plus, Search, Mail, Phone } from "lucide-react";
+import { FormDialog } from "@/components/forms/FormDialog";
+import { CustomerForm } from "@/components/forms/CustomerForm";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorMessage } from "@/components/ui/error-message";
 
 export function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { data: customers, isLoading, error } = useCustomers();
   
   const filteredCustomers = customers?.filter(customer =>
@@ -26,9 +31,17 @@ export function Customers() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Customers</h1>
-          <p className="text-muted-foreground">Loading customers...</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Customers</h1>
+            <p className="text-muted-foreground">Manage your customer database</p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="flex flex-col items-center space-y-2">
+            <LoadingSpinner size="lg" />
+            <p className="text-muted-foreground">Loading customers...</p>
+          </div>
         </div>
       </div>
     );
@@ -37,10 +50,16 @@ export function Customers() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Customers</h1>
-          <p className="text-destructive">Error loading customers: {error.message}</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Customers</h1>
+            <p className="text-muted-foreground">Manage your customer database</p>
+          </div>
         </div>
+        <ErrorMessage 
+          title="Failed to load customers"
+          message={error.message || 'Please try refreshing the page'}
+        />
       </div>
     );
   }
@@ -52,10 +71,22 @@ export function Customers() {
           <h1 className="text-3xl font-bold">Customers</h1>
           <p className="text-muted-foreground">Manage customer information and relationships</p>
         </div>
-        <Button className="bg-gradient-primary">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Customer
-        </Button>
+        <FormDialog
+          trigger={
+            <Button className="bg-gradient-primary">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Customer
+            </Button>
+          }
+          title="Add New Customer"
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+        >
+          <CustomerForm 
+            onSuccess={() => setCreateDialogOpen(false)}
+            onCancel={() => setCreateDialogOpen(false)}
+          />
+        </FormDialog>
       </div>
 
       <div className="flex items-center space-x-2">

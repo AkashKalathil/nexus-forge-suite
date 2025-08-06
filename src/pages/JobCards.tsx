@@ -5,9 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useJobCards, type JobCard } from "@/hooks/useJobCards";
 import { Plus, Search, Eye, Play, Pause } from "lucide-react";
+import { FormDialog } from "@/components/forms/FormDialog";
+import { JobCardForm } from "@/components/forms/JobCardForm";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorMessage } from "@/components/ui/error-message";
 
 export function JobCards() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { data: jobCards, isLoading, error } = useJobCards();
   
   const filteredJobCards = jobCards?.filter(jobCard =>
@@ -50,9 +55,17 @@ export function JobCards() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Job Cards</h1>
-          <p className="text-muted-foreground">Loading job cards...</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Job Cards</h1>
+            <p className="text-muted-foreground">Track production jobs through all stages</p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="flex flex-col items-center space-y-2">
+            <LoadingSpinner size="lg" />
+            <p className="text-muted-foreground">Loading job cards...</p>
+          </div>
         </div>
       </div>
     );
@@ -61,10 +74,16 @@ export function JobCards() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Job Cards</h1>
-          <p className="text-destructive">Error loading job cards: {error.message}</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Job Cards</h1>
+            <p className="text-muted-foreground">Track production jobs through all stages</p>
+          </div>
         </div>
+        <ErrorMessage 
+          title="Failed to load job cards"
+          message={error.message || 'Please try refreshing the page'}
+        />
       </div>
     );
   }
@@ -76,10 +95,22 @@ export function JobCards() {
           <h1 className="text-3xl font-bold">Job Cards</h1>
           <p className="text-muted-foreground">Track production jobs through all stages</p>
         </div>
-        <Button className="bg-gradient-primary">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Job Card
-        </Button>
+        <FormDialog
+          trigger={
+            <Button className="bg-gradient-primary">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Job Card
+            </Button>
+          }
+          title="Create New Job Card"
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+        >
+          <JobCardForm 
+            onSuccess={() => setCreateDialogOpen(false)}
+            onCancel={() => setCreateDialogOpen(false)}
+          />
+        </FormDialog>
       </div>
 
       <div className="flex items-center space-x-2">
