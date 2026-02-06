@@ -177,10 +177,10 @@ export function EnquiryForm({ enquiry, onSuccess, onCancel }: EnquiryFormProps) 
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="quoted">Quoted</SelectItem>
-                    <SelectItem value="won">Won</SelectItem>
-                    <SelectItem value="lost">Lost</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="under_review">Under Review</SelectItem>
+                    <SelectItem value="converted">Converted</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

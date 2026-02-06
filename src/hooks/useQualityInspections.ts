@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface QualityInspection {
   id: string;
@@ -12,7 +13,6 @@ export interface QualityInspection {
   inspection_date?: string;
   created_at: string;
   updated_at: string;
-  // Include job card data
   job_cards?: {
     job_number: string;
     title: string;
@@ -44,7 +44,7 @@ export function useCreateQualityInspection() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (inspection: Omit<QualityInspection, 'id' | 'created_at' | 'updated_at' | 'job_cards'>) => {
+    mutationFn: async (inspection: any) => {
       const { data, error } = await supabase
         .from('quality_inspections')
         .insert([inspection])
@@ -56,6 +56,60 @@ export function useCreateQualityInspection() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quality_inspections'] });
+      toast.success('Quality inspection created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create quality inspection');
+      console.error(error);
+    },
+  });
+}
+
+export function useUpdateQualityInspection() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { data, error } = await supabase
+        .from('quality_inspections')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quality_inspections'] });
+      toast.success('Quality inspection updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update quality inspection');
+      console.error(error);
+    },
+  });
+}
+
+export function useDeleteQualityInspection() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('quality_inspections')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quality_inspections'] });
+      toast.success('Quality inspection deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete quality inspection');
+      console.error(error);
     },
   });
 }

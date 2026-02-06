@@ -1,131 +1,49 @@
 import { useState } from "react";
-import { Plus, Search, DollarSign, Calendar, FileText, Download, Send } from "lucide-react";
+import { Plus, Search, DollarSign, Calendar, FileText, Download, Send, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useInvoices } from "@/hooks/useInvoices";
+import { useInvoices, useDeleteInvoice, useUpdateInvoice } from "@/hooks/useInvoices";
+import { FormDialog } from "@/components/forms/FormDialog";
+import { InvoiceForm } from "@/components/forms/InvoiceForm";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorMessage } from "@/components/ui/error-message";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-// Mock data for invoices
-const mockInvoices = [
-  {
-    id: "INV-001",
-    jobCardId: "JOB-001",
-    quotationId: "QUO-001",
-    customerName: "ABC Manufacturing",
-    status: "sent",
-    amount: 15000,
-    taxAmount: 1950,
-    totalAmount: 16950,
-    issueDate: "2024-01-18",
-    dueDate: "2024-02-17",
-    paidDate: null,
-    paymentTerms: "Net 30",
-    currency: "USD",
-    lineItems: [
-      { description: "Custom Steel Brackets (20 units)", quantity: 20, unitPrice: 500, total: 10000 },
-      { description: "Mounting Hardware Kit (5 units)", quantity: 5, unitPrice: 1000, total: 5000 },
-    ],
-    customerDetails: {
-      address: "123 Industrial Way, Factory City, FC 12345",
-      contact: "John Smith",
-      email: "john@abcmfg.com",
-    },
-  },
-  {
-    id: "INV-002",
-    jobCardId: "JOB-002",
-    quotationId: "QUO-002",
-    customerName: "TechCorp Solutions",
-    status: "paid",
-    amount: 28000,
-    taxAmount: 3640,
-    totalAmount: 31640,
-    issueDate: "2024-01-16",
-    dueDate: "2024-02-15",
-    paidDate: "2024-01-20",
-    paymentTerms: "Net 30",
-    currency: "USD",
-    lineItems: [
-      { description: "Precision Machined Parts (100 units)", quantity: 100, unitPrice: 250, total: 25000 },
-      { description: "Quality Inspection", quantity: 1, unitPrice: 3000, total: 3000 },
-    ],
-    customerDetails: {
-      address: "456 Tech Boulevard, Innovation City, IC 67890",
-      contact: "Sarah Johnson",
-      email: "sarah@techcorp.com",
-    },
-  },
-  {
-    id: "INV-003",
-    jobCardId: "JOB-003",
-    quotationId: "QUO-003",
-    customerName: "AutoParts Inc",
-    status: "overdue",
-    amount: 75000,
-    taxAmount: 9750,
-    totalAmount: 84750,
-    issueDate: "2023-12-15",
-    dueDate: "2024-01-14",
-    paidDate: null,
-    paymentTerms: "Net 30",
-    currency: "USD",
-    lineItems: [
-      { description: "Brake Disc Components (1000 units)", quantity: 1000, unitPrice: 60, total: 60000 },
-      { description: "Assembly Services (1000 units)", quantity: 1000, unitPrice: 15, total: 15000 },
-    ],
-    customerDetails: {
-      address: "789 Auto Drive, Motor City, MC 13579",
-      contact: "Mike Wilson",
-      email: "mike@autoparts.com",
-    },
-  },
-  {
-    id: "INV-004",
-    jobCardId: "JOB-004",
-    quotationId: "QUO-004",
-    customerName: "Marine Solutions Ltd",
-    status: "draft",
-    amount: 42000,
-    taxAmount: 5460,
-    totalAmount: 47460,
-    issueDate: "2024-01-19",
-    dueDate: "2024-02-18",
-    paidDate: null,
-    paymentTerms: "Net 30",
-    currency: "USD",
-    lineItems: [
-      { description: "Marine Grade Steel Fabrication", quantity: 1, unitPrice: 35000, total: 35000 },
-      { description: "Corrosion Protection Coating", quantity: 1, unitPrice: 7000, total: 7000 },
-    ],
-    customerDetails: {
-      address: "321 Harbor View, Coastal City, CC 24680",
-      contact: "Captain Anderson",
-      email: "anderson@marinesolutions.com",
-    },
-  },
-];
-
-const statusColors = {
+const statusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800",
   sent: "bg-blue-100 text-blue-800",
   paid: "bg-green-100 text-green-800",
   overdue: "bg-red-100 text-red-800",
-  cancelled: "bg-red-100 text-red-800",
+  cancelled: "bg-gray-100 text-gray-800",
 };
 
 export default function Invoices() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<any>(null);
   
-  const { data: invoices = [], isLoading } = useInvoices();
+  const { data: invoices = [], isLoading, error } = useInvoices();
+  const deleteInvoice = useDeleteInvoice();
+  const updateInvoice = useUpdateInvoice();
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch = 
       (invoice.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (invoice.job_card_id || '').toLowerCase().includes(searchTerm.toLowerCase());
+      invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
     
@@ -140,6 +58,50 @@ export default function Invoices() {
     .filter(inv => inv.status === 'paid')
     .reduce((sum, inv) => sum + inv.total_amount, 0);
 
+  const handleDelete = async (id: string) => {
+    await deleteInvoice.mutateAsync(id);
+  };
+
+  const handleMarkAsPaid = async (invoice: any) => {
+    await updateInvoice.mutateAsync({
+      id: invoice.id,
+      updates: { status: 'paid', paid_amount: invoice.total_amount }
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
+            <p className="text-muted-foreground">Manage customer invoices and payment tracking</p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="flex flex-col items-center space-y-2">
+            <LoadingSpinner size="lg" />
+            <p className="text-muted-foreground">Loading invoices...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
+            <p className="text-muted-foreground">Manage customer invoices and payment tracking</p>
+          </div>
+        </div>
+        <ErrorMessage title="Failed to load invoices" message={error.message || 'Please try refreshing the page'} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -149,11 +111,37 @@ export default function Invoices() {
             Manage customer invoices and payment tracking
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Invoice
-        </Button>
+        <FormDialog
+          trigger={
+            <Button className="bg-gradient-primary">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Invoice
+            </Button>
+          }
+          title="Create New Invoice"
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+        >
+          <InvoiceForm 
+            onSuccess={() => setCreateDialogOpen(false)}
+            onCancel={() => setCreateDialogOpen(false)}
+          />
+        </FormDialog>
       </div>
+
+      {/* Edit Dialog */}
+      <FormDialog
+        trigger={<span />}
+        title="Edit Invoice"
+        open={!!editingInvoice}
+        onOpenChange={(open) => !open && setEditingInvoice(null)}
+      >
+        <InvoiceForm 
+          invoice={editingInvoice}
+          onSuccess={() => setEditingInvoice(null)}
+          onCancel={() => setEditingInvoice(null)}
+        />
+      </FormDialog>
 
       {/* Summary Cards */}
       <div className="grid md:grid-cols-3 gap-4">
@@ -224,113 +212,114 @@ export default function Invoices() {
 
       {/* Invoices List */}
       <div className="grid gap-4">
-        {filteredInvoices.map((invoice) => (
-          <Card key={invoice.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg">{invoice.invoice_number}</CardTitle>
-                  <CardDescription className="text-base font-medium">
-                    {invoice.customer?.name || 'Unknown Customer'}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <span className="text-2xl font-bold">${invoice.total_amount.toLocaleString()}</span>
-                  <Badge className={statusColors[invoice.status as keyof typeof statusColors]}>
-                    {invoice.status}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Job Card: </span>
-                    <span className="font-medium">{invoice.job_card_id || 'N/A'}</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Quotation: </span>
-                    <span className="font-medium">{invoice.quotation_id || 'N/A'}</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Contact: </span>
-                    <span className="font-medium">{invoice.customer?.contact_person || 'N/A'}</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Payment Terms: </span>
-                    <span className="font-medium">{invoice.payment_terms || 'N/A'}</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Issued: </span>
-                    <span className="font-medium">
-                      {new Date(invoice.issue_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Due: </span>
-                    <span className={`font-medium ${invoice.status === 'overdue' ? 'text-red-600' : ''}`}>
-                      {new Date(invoice.due_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {invoice.paid_amount > 0 && invoice.status === 'paid' && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-green-600" />
-                      <span className="text-muted-foreground">Paid Amount: </span>
-                      <span className="font-medium text-green-600">
-                        ${invoice.paid_amount.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="pt-2 space-y-1">
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Subtotal: </span>
-                      <span className="font-medium">${invoice.subtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Tax: </span>
-                      <span className="font-medium">${invoice.tax_amount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Line Items Preview */}
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Line Items:</h4>
-                <div className="space-y-1">
-                  {invoice.invoice_items?.map((item, index) => (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {item.description} (x{item.quantity})
-                      </span>
-                      <span className="font-medium">${item.total_price.toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-4">
-                <Button size="sm">View Details</Button>
-                <Button size="sm" variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </Button>
-                <Button size="sm" variant="outline">
-                  <Send className="mr-2 h-4 w-4" />
-                  Send to Customer
-                </Button>
-                <Button size="sm" variant="outline">Mark as Paid</Button>
-              </div>
+        {filteredInvoices.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No invoices found. Create your first invoice to get started.</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          filteredInvoices.map((invoice) => (
+            <Card key={invoice.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg">{invoice.invoice_number}</CardTitle>
+                    <CardDescription className="text-base font-medium">
+                      {invoice.customer?.name || 'Unknown Customer'}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <span className="text-2xl font-bold">${invoice.total_amount.toLocaleString()}</span>
+                    <Badge className={statusColors[invoice.status as string] || statusColors.draft}>
+                      {invoice.status}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Job Card: </span>
+                      <span className="font-medium">{invoice.job_card?.job_number || 'N/A'}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Quotation: </span>
+                      <span className="font-medium">{invoice.quotation?.quotation_id || 'N/A'}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Payment Terms: </span>
+                      <span className="font-medium">{invoice.payment_terms || 'N/A'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Issued: </span>
+                      <span className="font-medium">
+                        {new Date(invoice.issue_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Due: </span>
+                      <span className={`font-medium ${invoice.status === 'overdue' ? 'text-red-600' : ''}`}>
+                        {new Date(invoice.due_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    
+                    <div className="pt-2 space-y-1">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Subtotal: </span>
+                        <span className="font-medium">${invoice.subtotal.toLocaleString()}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Tax: </span>
+                        <span className="font-medium">${invoice.tax_amount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  <Button size="sm" variant="outline" onClick={() => setEditingInvoice(invoice)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  {invoice.status !== 'paid' && (
+                    <Button size="sm" variant="outline" onClick={() => handleMarkAsPaid(invoice)}>
+                      Mark as Paid
+                    </Button>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this invoice? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(invoice.id)} className="bg-destructive text-destructive-foreground">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
