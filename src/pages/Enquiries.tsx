@@ -1,63 +1,36 @@
 import { useState } from "react";
-import { Plus, Search, Filter, Calendar, User, Mail, Phone } from "lucide-react";
+import { Plus, Search, Calendar, User, Mail, Phone, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEnquiries } from "@/hooks/useEnquiries";
+import { useEnquiries, useDeleteEnquiry } from "@/hooks/useEnquiries";
+import { FormDialog } from "@/components/forms/FormDialog";
+import { EnquiryForm } from "@/components/forms/EnquiryForm";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorMessage } from "@/components/ui/error-message";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-// Mock data for enquiries
-const mockEnquiries = [
-  {
-    id: "ENQ-001",
-    customerName: "ABC Manufacturing",
-    contactPerson: "John Smith",
-    email: "john@abcmfg.com",
-    phone: "+1 234 567 8900",
-    subject: "Custom Steel Fabrication",
-    description: "Need custom steel brackets for industrial equipment",
-    status: "open",
-    priority: "high",
-    createdAt: "2024-01-15",
-    estimatedValue: 15000,
-  },
-  {
-    id: "ENQ-002",
-    customerName: "TechCorp Solutions",
-    contactPerson: "Sarah Johnson",
-    email: "sarah@techcorp.com",
-    phone: "+1 234 567 8901",
-    subject: "Precision Machining Services",
-    description: "Require precision machined components for aerospace project",
-    status: "under_review",
-    priority: "medium",
-    createdAt: "2024-01-14",
-    estimatedValue: 25000,
-  },
-  {
-    id: "ENQ-003",
-    customerName: "AutoParts Inc",
-    contactPerson: "Mike Wilson",
-    email: "mike@autoparts.com",
-    phone: "+1 234 567 8902",
-    subject: "Bulk Production Order",
-    description: "Large scale production of automotive components",
-    status: "converted",
-    priority: "urgent",
-    createdAt: "2024-01-13",
-    estimatedValue: 50000,
-  },
-];
-
-const statusColors = {
+const statusColors: Record<string, string> = {
+  new: "bg-blue-100 text-blue-800",
   open: "bg-blue-100 text-blue-800",
   under_review: "bg-yellow-100 text-yellow-800",
   converted: "bg-green-100 text-green-800",
   closed: "bg-gray-100 text-gray-800",
 };
 
-const priorityColors = {
+const priorityColors: Record<string, string> = {
   low: "bg-gray-100 text-gray-800",
   medium: "bg-blue-100 text-blue-800",
   high: "bg-orange-100 text-orange-800",
@@ -68,8 +41,11 @@ export default function Enquiries() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingEnquiry, setEditingEnquiry] = useState<any>(null);
   
-  const { data: enquiries = [], isLoading } = useEnquiries();
+  const { data: enquiries = [], isLoading, error } = useEnquiries();
+  const deleteEnquiry = useDeleteEnquiry();
 
   const filteredEnquiries = enquiries.filter((enquiry) => {
     const matchesSearch = 
@@ -83,6 +59,43 @@ export default function Enquiries() {
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
+  const handleDelete = async (id: string) => {
+    await deleteEnquiry.mutateAsync(id);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Enquiries</h1>
+            <p className="text-muted-foreground">Manage customer enquiries and potential business opportunities</p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <div className="flex flex-col items-center space-y-2">
+            <LoadingSpinner size="lg" />
+            <p className="text-muted-foreground">Loading enquiries...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Enquiries</h1>
+            <p className="text-muted-foreground">Manage customer enquiries and potential business opportunities</p>
+          </div>
+        </div>
+        <ErrorMessage title="Failed to load enquiries" message={error.message || 'Please try refreshing the page'} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -92,11 +105,37 @@ export default function Enquiries() {
             Manage customer enquiries and potential business opportunities
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Enquiry
-        </Button>
+        <FormDialog
+          trigger={
+            <Button className="bg-gradient-primary">
+              <Plus className="mr-2 h-4 w-4" />
+              New Enquiry
+            </Button>
+          }
+          title="Create New Enquiry"
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+        >
+          <EnquiryForm 
+            onSuccess={() => setCreateDialogOpen(false)}
+            onCancel={() => setCreateDialogOpen(false)}
+          />
+        </FormDialog>
       </div>
+
+      {/* Edit Dialog */}
+      <FormDialog
+        trigger={<span />}
+        title="Edit Enquiry"
+        open={!!editingEnquiry}
+        onOpenChange={(open) => !open && setEditingEnquiry(null)}
+      >
+        <EnquiryForm 
+          enquiry={editingEnquiry}
+          onSuccess={() => setEditingEnquiry(null)}
+          onCancel={() => setEditingEnquiry(null)}
+        />
+      </FormDialog>
 
       {/* Filters */}
       <Card>
@@ -117,6 +156,7 @@ export default function Enquiries() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="new">New</SelectItem>
                 <SelectItem value="open">Open</SelectItem>
                 <SelectItem value="under_review">Under Review</SelectItem>
                 <SelectItem value="converted">Converted</SelectItem>
@@ -141,66 +181,97 @@ export default function Enquiries() {
 
       {/* Enquiries List */}
       <div className="grid gap-4">
-        {filteredEnquiries.map((enquiry) => (
-          <Card key={enquiry.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg">{enquiry.enquiry_id}</CardTitle>
-                  <CardDescription className="text-base font-medium">
-                    {enquiry.subject}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Badge className={priorityColors[enquiry.priority as keyof typeof priorityColors]}>
-                    {enquiry.priority}
-                  </Badge>
-                  <Badge className={statusColors[enquiry.status as keyof typeof statusColors]}>
-                    {enquiry.status?.replace('_', ' ')}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{enquiry.customer_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{enquiry.customer_email || 'Not provided'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{enquiry.customer_phone || 'Not provided'}</span>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {enquiry.description || 'No description provided'}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      Created: {new Date(enquiry.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Estimated Value: </span>
-                    <span className="font-medium">${enquiry.estimated_value?.toLocaleString() || 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button size="sm">View Details</Button>
-                <Button size="sm" variant="outline">Convert to Quote</Button>
-                <Button size="sm" variant="outline">Contact Customer</Button>
-              </div>
+        {filteredEnquiries.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No enquiries found. Create your first enquiry to get started.</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          filteredEnquiries.map((enquiry) => (
+            <Card key={enquiry.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg">{enquiry.enquiry_id}</CardTitle>
+                    <CardDescription className="text-base font-medium">
+                      {enquiry.subject}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge className={priorityColors[enquiry.priority as string] || priorityColors.medium}>
+                      {enquiry.priority}
+                    </Badge>
+                    <Badge className={statusColors[enquiry.status as string] || statusColors.new}>
+                      {enquiry.status?.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{enquiry.customer_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{enquiry.customer_email || 'Not provided'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{enquiry.customer_phone || 'Not provided'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {enquiry.description || 'No description provided'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        Created: {new Date(enquiry.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Estimated Value: </span>
+                      <span className="font-medium">${enquiry.estimated_value?.toLocaleString() || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button size="sm" variant="outline" onClick={() => setEditingEnquiry(enquiry)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Enquiry</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this enquiry? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(enquiry.id)} className="bg-destructive text-destructive-foreground">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
