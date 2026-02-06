@@ -44,7 +44,11 @@ export function QualityInspectionForm({ inspection, onSuccess, onCancel }: Quali
     setIsSubmitting(true);
     try {
       const submitData = {
-        ...data,
+        inspection_type: data.inspection_type,
+        inspector_name: data.inspector_name,
+        status: data.status,
+        defects_found: data.defects_found || 0,
+        notes: data.notes || null,
         job_card_id: data.job_card_id || null,
       };
 
