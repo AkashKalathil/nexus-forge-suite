@@ -3,17 +3,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useJobCards, type JobCard } from "@/hooks/useJobCards";
-import { Plus, Search, Eye, Play, Pause } from "lucide-react";
+import { useJobCards, useDeleteJobCard, useUpdateJobCard, type JobCard } from "@/hooks/useJobCards";
+import { Plus, Search, Eye, Play, Pause, Edit, Trash2 } from "lucide-react";
 import { FormDialog } from "@/components/forms/FormDialog";
 import { JobCardForm } from "@/components/forms/JobCardForm";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function JobCards() {
   const [searchTerm, setSearchTerm] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingJobCard, setEditingJobCard] = useState<JobCard | null>(null);
   const { data: jobCards, isLoading, error } = useJobCards();
+  const deleteJobCard = useDeleteJobCard();
+  const updateJobCard = useUpdateJobCard();
   
   const filteredJobCards = jobCards?.filter(jobCard =>
     jobCard.job_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,6 +64,15 @@ export function JobCards() {
       case 'cancelled': return 0;
       default: return 0;
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteJobCard.mutateAsync(id);
+  };
+
+  const handleStatusToggle = async (jobCard: JobCard) => {
+    const newStatus = jobCard.status === 'in_progress' ? 'pending' : 'in_progress';
+    await updateJobCard.mutateAsync({ id: jobCard.id, updates: { status: newStatus } });
   };
 
   if (isLoading) {
@@ -113,6 +136,20 @@ export function JobCards() {
         </FormDialog>
       </div>
 
+      {/* Edit Dialog */}
+      <FormDialog
+        trigger={<span />}
+        title="Edit Job Card"
+        open={!!editingJobCard}
+        onOpenChange={(open) => !open && setEditingJobCard(null)}
+      >
+        <JobCardForm 
+          jobCard={editingJobCard}
+          onSuccess={() => setEditingJobCard(null)}
+          onCancel={() => setEditingJobCard(null)}
+        />
+      </FormDialog>
+
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -126,98 +163,128 @@ export function JobCards() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredJobCards.map((jobCard) => (
-          <Card key={jobCard.id} className="shadow-card hover:shadow-elevated transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{jobCard.job_number}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{jobCard.title}</p>
-                  {jobCard.customers && (
-                    <p className="text-xs text-muted-foreground">Customer: {jobCard.customers.name}</p>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Badge 
-                    variant="outline"
-                    className={getStatusColor(jobCard.status)}
-                  >
-                    {jobCard.status}
-                  </Badge>
-                  <Badge 
-                    variant="outline"
-                    className={`${getPriorityColor(jobCard.priority)} text-xs`}
-                  >
-                    {jobCard.priority}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Estimated Hours</p>
-                  <p className="font-medium">{jobCard.estimated_hours || 'Not set'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Actual Hours</p>
-                  <p className="font-medium">{jobCard.actual_hours || 'Not set'}</p>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm text-muted-foreground">Progress</p>
-                  <p className="text-sm font-medium">{getStatusProgress(jobCard.status)}%</p>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-gradient-primary h-2 rounded-full transition-all"
-                    style={{ width: `${getStatusProgress(jobCard.status)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Assigned To</p>
-                  <p className="font-medium">{jobCard.assigned_to || 'Unassigned'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Due Date</p>
-                  <p className="font-medium">
-                    {jobCard.due_date ? new Date(jobCard.due_date).toLocaleDateString() : 'Not set'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="flex-1"
-                  disabled={jobCard.status === 'completed'}
-                >
-                  {jobCard.status === 'in_progress' ? (
-                    <>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Pause
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Start
-                    </>
-                  )}
-                </Button>
-              </div>
+        {filteredJobCards.length === 0 ? (
+          <Card className="col-span-full">
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No job cards found. Create your first job card to get started.</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          filteredJobCards.map((jobCard) => (
+            <Card key={jobCard.id} className="shadow-card hover:shadow-elevated transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{jobCard.job_number}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{jobCard.title}</p>
+                    {jobCard.customers && (
+                      <p className="text-xs text-muted-foreground">Customer: {jobCard.customers.name}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Badge 
+                      variant="outline"
+                      className={getStatusColor(jobCard.status)}
+                    >
+                      {jobCard.status}
+                    </Badge>
+                    <Badge 
+                      variant="outline"
+                      className={`${getPriorityColor(jobCard.priority)} text-xs`}
+                    >
+                      {jobCard.priority}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Estimated Hours</p>
+                    <p className="font-medium">{jobCard.estimated_hours || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Actual Hours</p>
+                    <p className="font-medium">{jobCard.actual_hours || 'Not set'}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-sm text-muted-foreground">Progress</p>
+                    <p className="text-sm font-medium">{getStatusProgress(jobCard.status)}%</p>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-gradient-primary h-2 rounded-full transition-all"
+                      style={{ width: `${getStatusProgress(jobCard.status)}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Assigned To</p>
+                    <p className="font-medium">{jobCard.assigned_to || 'Unassigned'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Due Date</p>
+                    <p className="font-medium">
+                      {jobCard.due_date ? new Date(jobCard.due_date).toLocaleDateString() : 'Not set'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setEditingJobCard(jobCard)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={jobCard.status === 'completed'}
+                    onClick={() => handleStatusToggle(jobCard)}
+                  >
+                    {jobCard.status === 'in_progress' ? (
+                      <>
+                        <Pause className="h-4 w-4 mr-2" />
+                        Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Start
+                      </>
+                    )}
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Job Card</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this job card? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(jobCard.id)} className="bg-destructive text-destructive-foreground">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Active Jobs Summary */}
