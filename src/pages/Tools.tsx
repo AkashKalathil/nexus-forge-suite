@@ -306,6 +306,9 @@ export default function Tools() {
           ))
         )}
       </div>
+
+      {/* AI Metallurgist */}
+      <MetallurgistTool />
     </div>
   );
 }
