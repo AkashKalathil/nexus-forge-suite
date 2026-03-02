@@ -16,6 +16,7 @@ import Tools from "./pages/Tools";
 import Dispatch from "./pages/Dispatch";
 import Invoices from "./pages/Invoices";
 import NotFound from "./pages/NotFound";
+import { AIChatbot } from "./components/chat/AIChatbot";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
+        <AIChatbot />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
