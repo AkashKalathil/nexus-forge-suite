@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Search, Wrench, Calendar, AlertCircle, CheckCircle, Clock, Edit, Trash2 } from "lucide-react";
+import { MetallurgistTool } from "@/components/tools/MetallurgistTool";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
