@@ -2,3 +2,6 @@ project_id = "eiftggygyogggtwsdntl"
 
 [functions.erp-chat]
 verify_jwt = false
+
+[functions.metallurgist]
+verify_jwt = false
