@@ -11,8 +11,8 @@ serve(async (req) => {
 
   try {
     const { messages, mode } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const AI_GATEWAY_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!AI_GATEWAY_KEY) throw new Error("AI Gateway API key is not configured");
 
     const systemPrompt = `
 === LAYER 1: IDENTITY ===
